@@ -69,10 +69,10 @@ npm install
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+The go code requires an environment variable set named `ADO_PERSONAL_ACCESS_TOKEN`.
+The variable should be set to your personal access token from Azure DevOps.
 
-_For more examples, please refer to the [Documentation](https://example.com)_
-
+To generate a new personal access token, follow [this guide from Microsoft][ms-pa-token].
 
 
 <!-- ROADMAP -->
@@ -117,3 +117,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 [issues-url]: https://github.com/dfds/{repository-name}/issues
 [license-shield]: https://img.shields.io/github/license/dfds/{repository-name}?style=plastic
 [license-url]: https://github.com/dfds/{repository-name}/blob/master/LICENSE
+[ms-pa-token]: https://docs.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=preview-page
