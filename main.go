@@ -59,9 +59,14 @@ func main() {
 	//agentcloudsResponse := getAgentcloudRequests(token)
 	//fmt.Printf("%#v\n", "Found "+strconv.Itoa(agentcloudsResponse.Count)+" agent cloud requests")
 
-	jobRequests := getJobRequests(token,169)
+	jobRequests := getJobRequests(token, 169)
 
-	
+	fmt.Printf("%#v\n", "Found "+strconv.Itoa(jobRequests.Count)+" agent requests")
+
+	buildStatistics := ConvertAgentRequestsResponseToBuildStatistics(jobRequests)
+
+	fmt.Print(buildStatistics)
+
 }
 
 func getAgentcloudRequests(adoPersonalAccessToken string) AgentcloudsRequestsResponse {
@@ -77,6 +82,24 @@ func getAgentcloudRequests(adoPersonalAccessToken string) AgentcloudsRequestsRes
 	json.Unmarshal(resp.Body(), &agentcloudsResponse)
 
 	return agentcloudsResponse
+}
+
+// This one
+func ConvertAgentRequestsResponseToBuildStatistics(jobRequestsResponse JobRequestsResponse) []BuildStatistic {
+	var buildStatistics []BuildStatistic
+
+	for _, jobRequest := range jobRequestsResponse.Value {
+
+		buildStatistic := BuildStatistic{
+			StartTime:   jobRequest.QueueTime,
+			EndTime:     jobRequest.FinishTime,
+			QueueLength: jobRequest.ReceiveTime.Sub(jobRequest.QueueTime),
+			BuildLength: jobRequest.FinishTime.Sub(jobRequest.ReceiveTime),
+		}
+
+		buildStatistics = append(buildStatistics, buildStatistic)
+	}
+	return buildStatistics
 }
 
 func ConvertAgentcloudsRequestsResponseToBuildStatistics(agentcloudsRequestsResponse AgentcloudsRequestsResponse) []BuildStatistic {
@@ -95,29 +118,28 @@ func ConvertAgentcloudsRequestsResponseToBuildStatistics(agentcloudsRequestsResp
 	return buildStatistics
 }
 
-
-func getJobRequests(adoPersonalAccessToken string, poolId int) jobRequestsResponse {
+func getJobRequests(adoPersonalAccessToken string, poolId int) JobRequestsResponse {
 
 	client := resty.New()
 	// Bearer Auth Token for all request
 	client.SetBasicAuth("", adoPersonalAccessToken)
 	resp, _ := client.R().
-		Get("https://dev.azure.com/dfds/_apis/distributedtask/pools/"+strconv.Itoa(poolId)+ "/jobrequests")
+		Get("https://dev.azure.com/dfds/_apis/distributedtask/pools/" + strconv.Itoa(poolId) + "/jobrequests")
 
-	jobRequestsResponse := jobRequestsResponse{}
+	jobRequestsResponse := JobRequestsResponse{}
 	json.Unmarshal(resp.Body(), &jobRequestsResponse)
 
 	return jobRequestsResponse
 }
 
-type jobRequestsResponse struct {
+type JobRequestsResponse struct {
 	Count int `json:"count"`
 	Value []struct {
 		RequestID     int       `json:"requestId"`
-		QueueTime     time.Time `json:"queueTime"`
+		QueueTime     time.Time `json:"queueTime"` // When the pool is assigned the job and waiting in queue
 		AssignTime    time.Time `json:"assignTime"`
-		ReceiveTime   time.Time `json:"receiveTime"`
-		FinishTime    time.Time `json:"finishTime"`
+		ReceiveTime   time.Time `json:"receiveTime"` // Agent acknowledges that it has received the job
+		FinishTime    time.Time `json:"finishTime"`  // Agent is finished with the request
 		Result        string    `json:"result"`
 		ServiceOwner  string    `json:"serviceOwner"`
 		HostID        string    `json:"hostId"`
