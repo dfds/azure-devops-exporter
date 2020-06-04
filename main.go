@@ -56,8 +56,12 @@ func main() {
 	// Get Azure Devops personal access token from environment
 	token := os.Getenv("ADO_PERSONAL_ACCESS_TOKEN")
 
-	agentcloudsResponse := getAgentcloudRequests(token)
-	fmt.Printf("%#v\n", "Found "+strconv.Itoa(agentcloudsResponse.Count)+" agent cloud requests")
+	//agentcloudsResponse := getAgentcloudRequests(token)
+	//fmt.Printf("%#v\n", "Found "+strconv.Itoa(agentcloudsResponse.Count)+" agent cloud requests")
+
+	jobRequests := getJobRequests(token,169)
+
+	
 }
 
 func getAgentcloudRequests(adoPersonalAccessToken string) AgentcloudsRequestsResponse {
@@ -89,4 +93,91 @@ func ConvertAgentcloudsRequestsResponseToBuildStatistics(agentcloudsRequestsResp
 		buildStatistics = append(buildStatistics, buildStatistic)
 	}
 	return buildStatistics
+}
+
+
+func getJobRequests(adoPersonalAccessToken string, poolId int) jobRequestsResponse {
+
+	client := resty.New()
+	// Bearer Auth Token for all request
+	client.SetBasicAuth("", adoPersonalAccessToken)
+	resp, _ := client.R().
+		Get("https://dev.azure.com/dfds/_apis/distributedtask/pools/"+strconv.Itoa(poolId)+ "/jobrequests")
+
+	jobRequestsResponse := jobRequestsResponse{}
+	json.Unmarshal(resp.Body(), &jobRequestsResponse)
+
+	return jobRequestsResponse
+}
+
+type jobRequestsResponse struct {
+	Count int `json:"count"`
+	Value []struct {
+		RequestID     int       `json:"requestId"`
+		QueueTime     time.Time `json:"queueTime"`
+		AssignTime    time.Time `json:"assignTime"`
+		ReceiveTime   time.Time `json:"receiveTime"`
+		FinishTime    time.Time `json:"finishTime"`
+		Result        string    `json:"result"`
+		ServiceOwner  string    `json:"serviceOwner"`
+		HostID        string    `json:"hostId"`
+		ScopeID       string    `json:"scopeId"`
+		PlanType      string    `json:"planType"`
+		PlanID        string    `json:"planId"`
+		JobID         string    `json:"jobId"`
+		Demands       []string  `json:"demands"`
+		ReservedAgent struct {
+			Links struct {
+				Self struct {
+					Href string `json:"href"`
+				} `json:"self"`
+				Web struct {
+					Href string `json:"href"`
+				} `json:"web"`
+			} `json:"_links"`
+			ID                int    `json:"id"`
+			Name              string `json:"name"`
+			Version           string `json:"version"`
+			OsDescription     string `json:"osDescription"`
+			Enabled           bool   `json:"enabled"`
+			Status            string `json:"status"`
+			ProvisioningState string `json:"provisioningState"`
+			AccessPoint       string `json:"accessPoint"`
+		} `json:"reservedAgent"`
+		Definition struct {
+			Links struct {
+				Web struct {
+					Href string `json:"href"`
+				} `json:"web"`
+				Self struct {
+					Href string `json:"href"`
+				} `json:"self"`
+			} `json:"_links"`
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		} `json:"definition"`
+		Owner struct {
+			Links struct {
+				Web struct {
+					Href string `json:"href"`
+				} `json:"web"`
+				Self struct {
+					Href string `json:"href"`
+				} `json:"self"`
+			} `json:"_links"`
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		} `json:"owner"`
+		Data struct {
+			ParallelismTag string `json:"ParallelismTag"`
+			IsScheduledKey string `json:"IsScheduledKey"`
+		} `json:"data,omitempty"`
+		PoolID             int           `json:"poolId"`
+		AgentDelays        []interface{} `json:"agentDelays"`
+		AgentSpecification struct {
+			VMImage string `json:"vmImage"`
+		} `json:"agentSpecification,omitempty"`
+		OrchestrationID        string `json:"orchestrationId"`
+		MatchesAllAgentsInPool bool   `json:"matchesAllAgentsInPool"`
+	} `json:"value"`
 }
