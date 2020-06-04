@@ -10,6 +10,14 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+type BuildStatistic struct {
+	VirtualMachineImage string
+	StartTime           time.Time
+	EndTime             time.Time
+	BuildLength         time.Duration
+	QueueLength         time.Duration
+}
+
 type AgentcloudsRequestsResponse struct {
 	Count int `json:"count"`
 	Value []struct {
@@ -57,12 +65,28 @@ func getAgentcloudRequests(adoPersonalAccessToken string) AgentcloudsRequestsRes
 	client := resty.New()
 	// Bearer Auth Token for all request
 	client.SetBasicAuth("", adoPersonalAccessToken)
-
+	//https://docs.microsoft.com/en-us/rest/api/azure/devops/distributedtask/requests/list?view=azure-devops-rest-6.0
 	resp, _ := client.R().
-		Get("https://dev.azure.com/dfds/_apis/distributedtask/agentclouds/1/requests?api-version=5.1-preview.1")
+		Get("https://dev.azure.com/dfds/_apis/distributedtask/agentclouds/1/requests?api-version=6.0-preview.1")
 
 	agentcloudsResponse := AgentcloudsRequestsResponse{}
 	json.Unmarshal(resp.Body(), &agentcloudsResponse)
 
 	return agentcloudsResponse
+}
+
+func ConvertAgentcloudsRequestsResponseToBuildStatistics(agentcloudsRequestsResponse AgentcloudsRequestsResponse) []BuildStatistic {
+	var buildStatistics []BuildStatistic
+
+	for _, agentcloudsRequest := range agentcloudsRequestsResponse.Value {
+
+		buildStatistic := BuildStatistic{
+			StartTime:   agentcloudsRequest.ProvisionRequestTime,
+			QueueLength: agentcloudsRequest.AgentConnectedTime.Sub(agentcloudsRequest.ProvisionRequestTime),
+			BuildLength: agentcloudsRequest.ReleaseRequestTime.Sub(agentcloudsRequest.AgentConnectedTime),
+		}
+
+		buildStatistics = append(buildStatistics, buildStatistic)
+	}
+	return buildStatistics
 }
