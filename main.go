@@ -33,6 +33,15 @@ func main() {
 
 }
 
+func removeExistingBuilds(existingBuildIDs []string, idToBuild map[string]string) map[string]string {
+	for _, existingBuildID := range existingBuildIDs {
+		delete(idToBuild, existingBuildID)
+
+	}
+
+	return idToBuild
+}
+
 func convertBuildsResponseToMap(buildsResponseAsString string) map[string]string {
 
 	buildStrings := strings.Split(buildsResponseAsString, "{\"_links")
