@@ -51,6 +51,20 @@ type AgentcloudsRequestsResponse struct {
 	} `json:"value"`
 }
 
+type ProjectsResponse struct {
+	Count int `json:"count"`
+	Value []struct {
+		ID string `json:"id"`
+		// Name           string    `json:"name"`
+		// Description    string    `json:"description,omitempty"`
+		// URL            string    `json:"url"`
+		// State          string    `json:"state"`
+		// Revision       int       `json:"revision"`
+		// Visibility     string    `json:"visibility"`
+		// LastUpdateTime time.Time `json:"lastUpdateTime"`
+	} `json:"value"`
+}
+
 func main() {
 
 	// Get Azure Devops personal access token from environment
@@ -59,14 +73,17 @@ func main() {
 	//agentcloudsResponse := getAgentcloudRequests(token)
 	//fmt.Printf("%#v\n", "Found "+strconv.Itoa(agentcloudsResponse.Count)+" agent cloud requests")
 
-	jobRequests := getJobRequests(token, 169)
+	// jobRequests := getJobRequests(token, 169)
 
-	fmt.Printf("%#v\n", "Found "+strconv.Itoa(jobRequests.Count)+" agent requests")
+	// fmt.Printf("%#v\n", "Found "+strconv.Itoa(jobRequests.Count)+" agent requests")
 
-	buildStatistics := ConvertAgentRequestsResponseToBuildStatistics(jobRequests)
+	// buildStatistics := ConvertAgentRequestsResponseToBuildStatistics(jobRequests)
 
-	fmt.Print(buildStatistics)
+	// fmt.Print(buildStatistics)
 
+	projectIDs := getProjectIDs(token)
+
+	fmt.Print(projectIDs)
 }
 
 func getAgentcloudRequests(adoPersonalAccessToken string) AgentcloudsRequestsResponse {
@@ -130,6 +147,27 @@ func getJobRequests(adoPersonalAccessToken string, poolId int) JobRequestsRespon
 	json.Unmarshal(resp.Body(), &jobRequestsResponse)
 
 	return jobRequestsResponse
+}
+
+func getProjectIDs(adoPersonalAccessToken string) []string {
+
+	client := resty.New()
+	// Bearer Auth Token for all request
+	client.SetBasicAuth("", adoPersonalAccessToken)
+	resp, _ := client.R().
+		Get("https://dev.azure.com/dfds/_apis/projects?api-version=5.1")
+
+	projectsResponse := ProjectsResponse{}
+	json.Unmarshal(resp.Body(), &projectsResponse)
+
+	projectIDCollection := []string{}
+	for i := 0; i < len(projectsResponse.Value); i++ {
+		project := projectsResponse.Value[i]
+
+		projectIDCollection = append(projectIDCollection, project.ID)
+
+	}
+	return projectIDCollection
 }
 
 type JobRequestsResponse struct {
