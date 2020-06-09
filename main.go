@@ -64,7 +64,7 @@ func getBuildsResponseAsString(adoPersonalAccessToken string, projectID string) 
 	// Bearer Auth Token for all request
 	client.SetBasicAuth("", adoPersonalAccessToken)
 	resp, _ := client.R().
-		Get("https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5")
+		Get("https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5000")
 
 	return resp.String()
 }
