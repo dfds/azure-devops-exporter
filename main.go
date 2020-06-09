@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -25,16 +27,35 @@ func main() {
 	fmt.Print(projectIDs)
 
 	r := getBuildsResponseAsString(token, "b37a3f59-1490-4321-b288-a7985e3da04c")
+
+	convertBuildsResponseToMap(r)
 	fmt.Print(r)
 
 }
+
+func convertBuildsResponseToMap(buildsResponseAsString string) map[string]string {
+
+	buildStrings := strings.Split(buildsResponseAsString, "{\"_links")
+	buildStrings = buildStrings[1:]
+	regExPattern := regexp.MustCompile(`"id":(\d*),"buildNumber"`)
+
+	var results = make(map[string]string)
+	for _, currentString := range buildStrings {
+		key := regExPattern.FindStringSubmatch(currentString)[1]
+
+		results[key] = "{\"_links" + strings.TrimRight(currentString, ",")
+	}
+
+	return results
+}
+
 func getBuildsResponseAsString(adoPersonalAccessToken string, projectID string) string {
 
 	client := resty.New()
 	// Bearer Auth Token for all request
 	client.SetBasicAuth("", adoPersonalAccessToken)
 	resp, _ := client.R().
-		Get("https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5000")
+		Get("https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5")
 
 	return resp.String()
 }
