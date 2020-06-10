@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -19,6 +18,20 @@ type ProjectsResponse struct {
 	} `json:"value"`
 }
 
+type Storage interface {
+	getExistingBuildIDs() []string
+	storeBuild(buildID string, fileContent string)
+}
+
+type diskStorage struct{}
+
+func (diskStorage) getExistingBuildIDs() []string {
+	return nil
+}
+func (diskStorage) storeBuild(buildID string, fileContent string) {
+	fmt.Print("storing: '" + buildID + "' ")
+}
+
 func main() {
 
 	// Get Azure Devops personal access token from environment
@@ -28,12 +41,14 @@ func main() {
 
 	fmt.Print(projectIDs)
 
-	existingBuildsIDs := []string{"0"}
+	storage := diskStorage{}
+
+	existingBuildsIDs := storage.getExistingBuildIDs()
 
 	var waitGroup sync.WaitGroup
 	for _, projectID := range projectIDs {
 		waitGroup.Add(1)
-		go processProject(&waitGroup, token, projectID, existingBuildsIDs)
+		go processProject(&waitGroup, storage, token, projectID, existingBuildsIDs)
 	}
 
 	waitGroup.Wait()
@@ -41,6 +56,7 @@ func main() {
 
 func processProject(
 	waitGroup *sync.WaitGroup,
+	storage Storage,
 	adoPersonalAccessToken string,
 	projectID string,
 	existingBuildIDs []string) {
@@ -53,8 +69,9 @@ func processProject(
 
 	idToBuildMap = removeExistingBuilds(existingBuildIDs, idToBuildMap)
 
-	fmt.Println("projectID: '" + projectID + "' has " + strconv.Itoa(len(idToBuildMap)) + " builds to upload")
-
+	for buildId, javascriptObject := range idToBuildMap {
+		storage.storeBuild(buildId, javascriptObject)
+	}
 }
 
 func removeExistingBuilds(existingBuildIDs []string, idToBuild map[string]string) map[string]string {
