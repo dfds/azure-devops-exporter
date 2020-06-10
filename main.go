@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -23,13 +24,40 @@ type Storage interface {
 	storeBuild(buildID string, fileContent string)
 }
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
 type diskStorage struct{}
 
 func (diskStorage) getExistingBuildIDs() []string {
-	return nil
+	dir, err := os.Getwd()
+	check(err)
+	root := dir + "/existing-builds/"
+
+	fileInfo, err := ioutil.ReadDir(root)
+	check(err)
+
+	var existingBuilds []string
+	for _, file := range fileInfo {
+		existingBuilds = append(existingBuilds, strings.TrimRight(file.Name(), ".json"))
+	}
+
+	return existingBuilds
 }
 func (diskStorage) storeBuild(buildID string, fileContent string) {
+
+	dir, err := os.Getwd()
+	check(err)
+
 	fmt.Print("storing: '" + buildID + "' ")
+
+	fileName := dir + "/existing-builds/" + buildID + ".json"
+	dataToWrite := []byte(fileContent)
+	err = ioutil.WriteFile(fileName, dataToWrite, 0644)
+	check(err)
 }
 
 func main() {
@@ -42,9 +70,7 @@ func main() {
 	fmt.Print(projectIDs)
 
 	storage := diskStorage{}
-
 	existingBuildsIDs := storage.getExistingBuildIDs()
-
 	var waitGroup sync.WaitGroup
 	for _, projectID := range projectIDs {
 		waitGroup.Add(1)
