@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -26,10 +28,32 @@ func main() {
 
 	fmt.Print(projectIDs)
 
-	r := getBuildsResponseAsString(token, "b37a3f59-1490-4321-b288-a7985e3da04c")
+	existingBuildsIDs := []string{"0"}
 
-	convertBuildsResponseToMap(r)
-	fmt.Print(r)
+	var waitGroup sync.WaitGroup
+	for _, projectID := range projectIDs {
+		waitGroup.Add(1)
+		go processProject(&waitGroup, token, projectID, existingBuildsIDs)
+	}
+
+	waitGroup.Wait()
+}
+
+func processProject(
+	waitGroup *sync.WaitGroup,
+	adoPersonalAccessToken string,
+	projectID string,
+	existingBuildIDs []string) {
+
+	defer waitGroup.Done()
+
+	buildsResponseAsString := getBuildsResponseAsString(adoPersonalAccessToken, projectID)
+
+	idToBuildMap := convertBuildsResponseToMap(buildsResponseAsString)
+
+	idToBuildMap = removeExistingBuilds(existingBuildIDs, idToBuildMap)
+
+	fmt.Println("projectID: '" + projectID + "' has " + strconv.Itoa(len(idToBuildMap)) + " builds to upload")
 
 }
 
