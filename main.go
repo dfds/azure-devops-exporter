@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -34,6 +35,28 @@ func check(e error) {
 }
 
 type diskStorage struct{}
+type awsStorage struct{}
+
+func main() {
+
+	// Get Azure Devops personal access token from environment
+	token := os.Getenv("ADO_PERSONAL_ACCESS_TOKEN")
+
+	projectIDs := getProjectIDs(token)
+
+	fmt.Print(projectIDs)
+
+	storage := awsStorage{}
+	existingBuildsIDs := storage.getExistingBuildIDs()
+	var waitGroup sync.WaitGroup
+	for _, projectID := range projectIDs {
+		waitGroup.Add(1)
+		go processProject(&waitGroup, storage, token, projectID, existingBuildsIDs)
+	}
+
+	waitGroup.Wait()
+
+}
 
 func (diskStorage) getExistingBuildIDs() []string {
 	dir, err := os.Getwd()
@@ -63,26 +86,51 @@ func (diskStorage) storeBuild(buildID string, fileContent string) {
 	check(err)
 }
 
-func main() {
+func (awsStorage) getExistingBuildIDs() []string {
 
-	// Get Azure Devops personal access token from environment
-	// token := os.Getenv("ADO_PERSONAL_ACCESS_TOKEN")
+	return nil
+}
 
-	// projectIDs := getProjectIDs(token)
+var myBucket = "dfds-datalake"
 
-	// fmt.Print(projectIDs)
+func (awsStorage) storeBuild(buildID string, fileContent string) {
 
-	// storage := diskStorage{}
-	// existingBuildsIDs := storage.getExistingBuildIDs()
-	// var waitGroup sync.WaitGroup
-	// for _, projectID := range projectIDs {
-	// 	waitGroup.Add(1)
-	// 	go processProject(&waitGroup, storage, token, projectID, existingBuildsIDs)
-	// }
+	var awsConfig *aws.Config
+	awsConfig = &aws.Config{
+		Region: aws.String("eu-west-1"),
+	}
 
-	// waitGroup.Wait()
+	// The session the S3 Uploader will use
+	sess := session.Must(session.NewSession(awsConfig))
 
-	uploadToS3()
+	// Create an uploader with the session and default options
+	uploader := s3manager.NewUploader(sess)
+
+	// Create an uploader with the session and custom options
+	// uploader := s3manager.NewUploader(sess, func(u *s3manager.Uploader) {
+	//     u.PartSize = 5 * 1024 * 1024 // The minimum/default allowed part size is 5MB
+	//     u.Concurrency = 2            // default is 5
+	// })
+
+	//defer f.Close()
+	// Source sample https://paulbradley.org/gos3/
+	buildFileKey := "azure-devops/" + buildID + ".json"
+	dataToWrite := []byte(fileContent)
+
+	// Upload the file to S3.
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(myBucket),
+		Key:    aws.String(buildFileKey),
+		Body:   bytes.NewReader(dataToWrite),
+	})
+
+	//in case it fails to upload
+	if err != nil {
+		fmt.Printf("failed to upload file, %v", err)
+		return
+	}
+
+	fmt.Printf("file uploaded to, %s\n", result.Location)
 }
 
 func processProject(
@@ -160,106 +208,4 @@ func getProjectIDs(adoPersonalAccessToken string) []string {
 
 	}
 	return projectIDCollection
-}
-
-func notmain() {
-	if len(os.Args) != 3 {
-		exitErrorf("bucket and file name required\nUsage: %s bucket_name filename",
-			os.Args[0])
-	}
-
-	bucket := os.Args[1]
-	filename := os.Args[2]
-
-	file, err := os.Open(filename)
-	if err != nil {
-		exitErrorf("Unable to open file %q, %v", err)
-	}
-
-	defer file.Close()
-
-	// Initialize a session in us-west-2 that the SDK will use to load
-	// credentials from the shared credentials file ~/.aws/credentials.
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("eu-west-1")},
-	)
-
-	// Setup the S3 Upload Manager. Also see the SDK doc for the Upload Manager
-	// for more information on configuring part size, and concurrency.
-	//
-	// http://docs.aws.amazon.com/sdk-for-go/api/service/s3/s3manager/#NewUploader
-	uploader := s3manager.NewUploader(sess)
-
-	// Upload the file's body to S3 bucket as an object with the key being the
-	// same as the filename.
-	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(bucket),
-
-		// Can also use the `filepath` standard library package to modify the
-		// filename as need for an S3 object key. Such as turning absolute path
-		// to a relative path.
-		Key: aws.String(filename),
-
-		// The file to be uploaded. io.ReadSeeker is preferred as the Uploader
-		// will be able to optimize memory when uploading large content. io.Reader
-		// is supported, but will require buffering of the reader's bytes for
-		// each part.
-		Body: file,
-	})
-	if err != nil {
-		// Print the error and exit.
-		exitErrorf("Unable to upload %q to %q, %v", filename, bucket, err)
-	}
-
-	fmt.Printf("Successfully uploaded %q to %q\n", filename, bucket)
-}
-
-func exitErrorf(msg string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, msg+"\n", args...)
-	os.Exit(1)
-}
-
-var filename = "existing-builds/6140.json"
-var myBucket = "dfds-datalake"
-var myKey = "azure-devops/6140.json"
-
-func uploadToS3() {
-	var awsConfig *aws.Config
-	awsConfig = &aws.Config{
-		Region: aws.String("eu-west-1"),
-	}
-
-	// The session the S3 Uploader will use
-	sess := session.Must(session.NewSession(awsConfig))
-
-	// Create an uploader with the session and default options
-	uploader := s3manager.NewUploader(sess)
-
-	// Create an uploader with the session and custom options
-	// uploader := s3manager.NewUploader(sess, func(u *s3manager.Uploader) {
-	//     u.PartSize = 5 * 1024 * 1024 // The minimum/default allowed part size is 5MB
-	//     u.Concurrency = 2            // default is 5
-	// })
-
-	//open the file
-	f, err := os.Open(filename)
-	if err != nil {
-		fmt.Printf("failed to open file %q, %v", filename, err)
-		return
-	}
-	//defer f.Close()
-
-	// Upload the file to S3.
-	result, err := uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(myBucket),
-		Key:    aws.String(myKey),
-		Body:   f,
-	})
-
-	//in case it fails to upload
-	if err != nil {
-		fmt.Printf("failed to upload file, %v", err)
-		return
-	}
-	fmt.Printf("file uploaded to, %s\n", result.Location)
 }
