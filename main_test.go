@@ -40,13 +40,13 @@ func TestRemoveExistingBuildsDoesAsStated(t *testing.T) {
 
 	idToBuildMap := convertBuildsResponseToMap(jsonString)
 
-	existingBuildIds := []string{"211146", "181970"}
+	existingBuildIDs := []string{"211146", "181970"}
 
-	resultBuilds := removeExistingBuilds(existingBuildIds, idToBuildMap)
+	resultBuilds := removeExistingBuilds(existingBuildIDs, idToBuildMap)
 
-	for _, existingBuildId := range existingBuildIds {
-		if _, ok := resultBuilds[existingBuildId]; ok {
-			t.Error("Key: '" + existingBuildId + "' should not exist in resultBuilds")
+	for _, existingBuildID := range existingBuildIDs {
+		if _, ok := resultBuilds[existingBuildID]; ok {
+			t.Error("Key: '" + existingBuildID + "' should not exist in resultBuilds")
 		}
 
 	}
