@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 )
 
 type diskStorage struct{}
@@ -34,5 +35,20 @@ func (diskStorage) storeBuild(buildID string, fileContent string) {
 	fileName := dir + "/existing-builds/" + buildID + ".json"
 	dataToWrite := []byte(fileContent)
 	err = ioutil.WriteFile(fileName, dataToWrite, 0644)
+	check(err)
+}
+
+func (diskStorage) storeScrapeResult(fileContent string) {
+
+	dir, err := os.Getwd()
+	check(err)
+
+	t := time.Now().UTC()
+
+	fileName := "azure-devops-builds-" + t.Format(time.RFC3339) + ".json"
+
+	filePathAndName := dir + "/scrape-results/" + fileName
+	dataToWrite := []byte(fileContent)
+	err = ioutil.WriteFile(filePathAndName, dataToWrite, 0644)
 	check(err)
 }

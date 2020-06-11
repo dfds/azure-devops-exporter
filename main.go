@@ -33,13 +33,14 @@ func main() {
 	projectsBuildStrings := make([]string, 0)
 	for i := 1; i <= len(projectIDs); i++ {
 		projectBuildsString := <-buildStringsChannel
-		projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
+		if projectBuildsString != "" {
+			projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
+		}
 		fmt.Print(strconv.Itoa(i) + " ")
 	}
 
 	fileContent := "[" + strings.Join(projectsBuildStrings[:], ",") + "]"
-
-	fmt.Println(fileContent)
+	storage.storeScrapeResult(fileContent)
 }
 
 type ProjectsResponse struct {
@@ -52,6 +53,7 @@ type ProjectsResponse struct {
 type Storage interface {
 	getExistingBuildIDs() []string
 	storeBuild(buildID string, fileContent string)
+	storeScrapeResult(fileContent string)
 }
 
 func check(e error) {
