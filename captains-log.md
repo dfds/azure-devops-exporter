@@ -1,4 +1,9 @@
 ## 2020-06-11
+
+We need to test if we get all the relevant results when we query:
+https://dev.azure.com/dfds/7d9e1da7-15ed-4d53-b567-81d11e7ccec6/_apis/build/builds?api-version=5.1&$top=5000&statusFilter=completed&minTime=2020-06-11T13:00:43Z&maxTime=2020-06-11T13:02:45Z
+  
+
 Does the json object we place in a single file have to be in an array or can we just dump comma separated object?
 ## 2020-06-10
 
