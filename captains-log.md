@@ -1,3 +1,10 @@
+## 2020-06-10
+
+Could we load the diff from last file to current file in s3. 
+Does it cost that much to have separate files for each build?
+
+Is there a correlation between a build to a service running in hellman. Can we attach meta data to the build files to tie this in? 
+
 ## 2020-06-09
 
 We added a function to get a list of project ID's.
