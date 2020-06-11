@@ -8,11 +8,10 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
-
-	// Get Azure Devops personal access token from environment
 	token := os.Getenv("ADO_PERSONAL_ACCESS_TOKEN")
 
 	projectIDs := getProjectIDs(token)
@@ -20,13 +19,27 @@ func main() {
 	fmt.Print(projectIDs)
 
 	storage := diskStorage{}
-	existingBuildsIDs := storage.getExistingBuildIDs()
+	//existingBuildsIDs := storage.getExistingBuildIDs()
+	existingBuildsIDs := make([]string, 0)
 
 	buildStringsChannel := make(chan string)
 
+	startTime := time.Date(
+		0, 1, 1, 0, 0, 0, 0, time.UTC)
+	scrapeStartTime := time.Now().UTC()
+
+	fmt.Println("Scraping finished builds until: " + scrapeStartTime.Format(time.RFC3339))
+
 	// start a goroutine for each project
 	for _, projectID := range projectIDs {
-		go processProject(buildStringsChannel, storage, token, projectID, existingBuildsIDs)
+		go processProject(
+			buildStringsChannel,
+			storage,
+			token,
+			projectID,
+			existingBuildsIDs,
+			startTime,
+			scrapeStartTime)
 	}
 
 	// Collect one projectBuildsStrings per project from the channel
@@ -67,9 +80,16 @@ func processProject(
 	storage Storage,
 	adoPersonalAccessToken string,
 	projectID string,
-	existingBuildIDs []string) {
+	existingBuildIDs []string,
+	startTime time.Time,
+	endTime time.Time) {
 
-	buildsResponseAsString := getBuildsResponseAsString(adoPersonalAccessToken, projectID)
+	//buildsResponseAsString := getBuildsResponseAsString(adoPersonalAccessToken, projectID)
+	buildsResponseAsString := getBuildsResponseAsStringBetween(
+		adoPersonalAccessToken,
+		projectID,
+		startTime,
+		endTime)
 
 	idToBuildMap := convertBuildsResponseToMap(buildsResponseAsString)
 
@@ -121,13 +141,21 @@ func convertBuildsResponseToMap(buildsResponseAsString string) map[string]string
 	return results
 }
 
-func getBuildsResponseAsString(adoPersonalAccessToken string, projectID string) string {
+func getBuildsResponseAsStringBetween(
+	adoPersonalAccessToken string,
+	projectID string,
+	startTime time.Time,
+	endTime time.Time) string {
 
 	client := resty.New()
 	// Bearer Auth Token for all request
 	client.SetBasicAuth("", adoPersonalAccessToken)
+	formattedStartTime := startTime.Format(time.RFC3339)
+	formattedEndTime := endTime.Format(time.RFC3339)
+
+	url := "https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5000&statusFilter=completed&minTime=" + formattedStartTime + "&maxTime=" + formattedEndTime
 	resp, _ := client.R().
-		Get("https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5000")
+		Get(url)
 
 	return resp.String()
 }
