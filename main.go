@@ -3,13 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
-
-	"github.com/go-resty/resty/v2"
 )
 
 func main() {
@@ -25,10 +23,8 @@ func main() {
 	existingBuildsIDs := storage.getExistingBuildIDs()
 
 	buildStringsChannel := make(chan string)
-	var waitGroup sync.WaitGroup
 	for _, projectID := range projectIDs {
-		waitGroup.Add(1)
-		go processProject(&waitGroup, buildStringsChannel, storage, token, projectID, existingBuildsIDs)
+		go processProject(buildStringsChannel, storage, token, projectID, existingBuildsIDs)
 	}
 
 	projectsBuildStrings := make([]string, 0)
@@ -61,14 +57,11 @@ func check(e error) {
 }
 
 func processProject(
-	waitGroup *sync.WaitGroup,
 	buildStrings chan<- string,
 	storage Storage,
 	adoPersonalAccessToken string,
 	projectID string,
 	existingBuildIDs []string) {
-
-	//	defer waitGroup.Done()
 
 	buildsResponseAsString := getBuildsResponseAsString(adoPersonalAccessToken, projectID)
 
