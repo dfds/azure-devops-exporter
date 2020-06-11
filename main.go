@@ -28,7 +28,15 @@ func main() {
 		go processProject(&waitGroup, storage, token, projectID, existingBuildsIDs)
 	}
 
+	results := make([]string, len(projectIDs))
+
+	//fmt.Printf("Results: %+v\n", results)
+
 	waitGroup.Wait()
+
+	for i := range results {
+		results[i] = <-buildStringsChannel
+	}
 
 }
 
@@ -52,6 +60,7 @@ func check(e error) {
 
 func processProject(
 	waitGroup *sync.WaitGroup,
+	buildStrings chan<- string,
 	storage Storage,
 	adoPersonalAccessToken string,
 	projectID string,
@@ -68,6 +77,8 @@ func processProject(
 	for buildID, javascriptObject := range idToBuildMap {
 		storage.storeBuild(buildID, javascriptObject)
 	}
+
+	buildStrings <- buildsResponseAsString
 }
 
 func removeExistingBuilds(existingBuildIDs []string, idToBuild map[string]string) map[string]string {
@@ -83,6 +94,14 @@ func convertBuildsResponseToMap(buildsResponseAsString string) map[string]string
 
 	buildStrings := strings.Split(buildsResponseAsString, "{\"_links")
 	buildStrings = buildStrings[1:]
+
+	if len(buildStrings) == 0 {
+		return nil
+	}
+
+	lastBuild := buildStrings[len(buildStrings)-1]
+	buildStrings[len(buildStrings)-1] = lastBuild[:len(lastBuild)-2]
+
 	regExPattern := regexp.MustCompile(`"id":(\d*),"buildNumber"`)
 
 	var results = make(map[string]string)
