@@ -23,16 +23,20 @@ func main() {
 	existingBuildsIDs := storage.getExistingBuildIDs()
 
 	buildStringsChannel := make(chan string)
+
+	// start a goroutine for each project
 	for _, projectID := range projectIDs {
 		go processProject(buildStringsChannel, storage, token, projectID, existingBuildsIDs)
 	}
 
+	// Collect one projectBuildsStrings per project from the channel
 	projectsBuildStrings := make([]string, 0)
 	for i := 1; i <= len(projectIDs); i++ {
 		projectBuildsString := <-buildStringsChannel
 		projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
 		fmt.Print(strconv.Itoa(i) + " ")
 	}
+
 	fileContent := "[" + strings.Join(projectsBuildStrings[:], ",") + "]"
 
 	fmt.Println(fileContent)
