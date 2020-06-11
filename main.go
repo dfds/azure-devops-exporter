@@ -19,13 +19,14 @@ func main() {
 	fmt.Print(projectIDs)
 
 	storage := diskStorage{}
+
 	//existingBuildsIDs := storage.getExistingBuildIDs()
 	existingBuildsIDs := make([]string, 0)
 
 	buildStringsChannel := make(chan string)
 
-	startTime := time.Date(
-		0, 1, 1, 0, 0, 0, 0, time.UTC)
+	startTime := storage.getLastScrapeStarTime()
+
 	scrapeStartTime := time.Now().UTC()
 
 	fmt.Println("Scraping finished builds until: " + scrapeStartTime.Format(time.RFC3339))
@@ -67,6 +68,7 @@ type Storage interface {
 	getExistingBuildIDs() []string
 	storeBuild(buildID string, fileContent string)
 	storeScrapeResult(fileContent string)
+	getLastScrapeStarTime() time.Time
 }
 
 func check(e error) {
