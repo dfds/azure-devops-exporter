@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -30,20 +31,15 @@ func main() {
 		go processProject(&waitGroup, buildStringsChannel, storage, token, projectID, existingBuildsIDs)
 	}
 
-	projectsBuildStrings := make([]string, len(projectIDs))
-
-	//fmt.Printf("Results: %+v\n", results)
-
-	//waitGroup.Wait()
-
-	for i := range projectsBuildStrings {
-		projectsBuildStrings[i] = <-buildStringsChannel
+	projectsBuildStrings := make([]string, 0)
+	for i := 1; i <= len(projectIDs); i++ {
+		projectBuildsString := <-buildStringsChannel
+		projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
+		fmt.Print(strconv.Itoa(i) + " ")
 	}
-
 	fileContent := "[" + strings.Join(projectsBuildStrings[:], ",") + "]"
 
-	fmt.Printf("Results: %+v\n", len(fileContent))
-
+	fmt.Println(fileContent)
 }
 
 type ProjectsResponse struct {
