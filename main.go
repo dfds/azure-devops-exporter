@@ -22,21 +22,27 @@ func main() {
 
 	storage := diskStorage{}
 	existingBuildsIDs := storage.getExistingBuildIDs()
+
+	buildStringsChannel := make(chan string)
 	var waitGroup sync.WaitGroup
 	for _, projectID := range projectIDs {
 		waitGroup.Add(1)
-		go processProject(&waitGroup, storage, token, projectID, existingBuildsIDs)
+		go processProject(&waitGroup, buildStringsChannel, storage, token, projectID, existingBuildsIDs)
 	}
 
-	results := make([]string, len(projectIDs))
+	projectsBuildStrings := make([]string, len(projectIDs))
 
 	//fmt.Printf("Results: %+v\n", results)
 
-	waitGroup.Wait()
+	//waitGroup.Wait()
 
-	for i := range results {
-		results[i] = <-buildStringsChannel
+	for i := range projectsBuildStrings {
+		projectsBuildStrings[i] = <-buildStringsChannel
 	}
+
+	fileContent := "[" + strings.Join(projectsBuildStrings[:], ",") + "]"
+
+	fmt.Printf("Results: %+v\n", len(fileContent))
 
 }
 
@@ -66,7 +72,7 @@ func processProject(
 	projectID string,
 	existingBuildIDs []string) {
 
-	defer waitGroup.Done()
+	//	defer waitGroup.Done()
 
 	buildsResponseAsString := getBuildsResponseAsString(adoPersonalAccessToken, projectID)
 
@@ -78,7 +84,13 @@ func processProject(
 		storage.storeBuild(buildID, javascriptObject)
 	}
 
-	buildStrings <- buildsResponseAsString
+	builds := make([]string, 0, len(idToBuildMap))
+
+	for _, build := range idToBuildMap {
+		builds = append(builds, build)
+	}
+
+	buildStrings <- strings.Join(builds[:], ",")
 }
 
 func removeExistingBuilds(existingBuildIDs []string, idToBuild map[string]string) map[string]string {

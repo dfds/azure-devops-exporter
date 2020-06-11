@@ -1,3 +1,5 @@
+## 2020-06-11
+Does the json object we place in a single file have to be in an array or can we just dump comma separated object?
 ## 2020-06-10
 
 Could we load the diff from last file to current file in s3. 
