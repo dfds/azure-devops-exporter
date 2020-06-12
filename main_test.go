@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestConvertBuildsResponseToMapHasValidStarAndEndingsOfObjects(t *testing.T) {
+func TestRemoveWrapperObjectHasValidStarAndEndingsOfObjects(t *testing.T) {
 
 	jsonFile, err := ioutil.ReadFile("test/TestConvertBuildsResponseToMapHasValidStarAndEndingsOfObjects.json")
 	if err != nil {
@@ -15,17 +15,16 @@ func TestConvertBuildsResponseToMapHasValidStarAndEndingsOfObjects(t *testing.T)
 
 	jsonString := string(jsonFile)
 
-	stringToBuildMap := convertBuildsResponseToMap(jsonString)
+	buildsString := removeWrapperObject(jsonString)
 
-	for _, value := range stringToBuildMap {
-		firstChar := value[0:1]
-		if firstChar != "{" {
-			t.Error("First character should be: '{' but was: '" + firstChar + "'")
-		}
-		lastChar := value[len(value)-1:]
-
-		if lastChar != "}" {
-			t.Error("Last character should be: '}' but was: '" + lastChar + "'")
-		}
+	firstChar := buildsString[0:1]
+	if firstChar != "{" {
+		t.Error("First character should be: '{' but was: '" + firstChar + "'")
 	}
+	lastChar := buildsString[len(buildsString)-1:]
+
+	if lastChar != "}" {
+		t.Error("Last character should be: '}' but was: '" + lastChar + "'")
+	}
+
 }

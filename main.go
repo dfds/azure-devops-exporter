@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -32,7 +31,6 @@ func main() {
 	for _, projectID := range projectIDs {
 		go processProject(
 			buildStringsChannel,
-			storage,
 			token,
 			projectID,
 			startTime,
@@ -75,7 +73,6 @@ func check(e error) {
 
 func processProject(
 	buildStrings chan<- string,
-	storage Storage,
 	adoPersonalAccessToken string,
 	projectID string,
 	startTime time.Time,
@@ -87,43 +84,22 @@ func processProject(
 		startTime,
 		endTime)
 
-	idToBuildMap := convertBuildsResponseToMap(buildsResponseAsString)
-
-	for buildID, javascriptObject := range idToBuildMap {
-		storage.storeBuild(buildID, javascriptObject)
+	if buildsResponseAsString == "" || strings.HasPrefix(buildsResponseAsString, "{\"count\":0,") {
+		buildStrings <- ""
 	}
+	buildsResponseAsString = removeWrapperObject(buildsResponseAsString)
 
-	builds := make([]string, 0, len(idToBuildMap))
-
-	for _, build := range idToBuildMap {
-		builds = append(builds, build)
-	}
-
-	buildStrings <- strings.Join(builds[:], ",")
+	buildStrings <- buildsResponseAsString
 }
 
-func convertBuildsResponseToMap(buildsResponseAsString string) map[string]string {
+func removeWrapperObject(buildsResponseAsString string) string {
 
-	buildStrings := strings.Split(buildsResponseAsString, "{\"_links")
-	buildStrings = buildStrings[1:]
+	i := strings.Index(buildsResponseAsString, "[")
+	buildsResponseAsString = buildsResponseAsString[i+1:]
 
-	if len(buildStrings) == 0 {
-		return nil
-	}
+	buildsResponseAsString = strings.TrimSuffix(buildsResponseAsString, "]}")
 
-	lastBuild := buildStrings[len(buildStrings)-1]
-	buildStrings[len(buildStrings)-1] = lastBuild[:len(lastBuild)-2]
-
-	regExPattern := regexp.MustCompile(`"id":(\d*),"buildNumber"`)
-
-	var results = make(map[string]string)
-	for _, currentString := range buildStrings {
-		key := regExPattern.FindStringSubmatch(currentString)[1]
-
-		results[key] = "{\"_links" + strings.TrimRight(currentString, ",")
-	}
-
-	return results
+	return buildsResponseAsString
 }
 
 func getBuildsResponseAsStringBetween(
