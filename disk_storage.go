@@ -39,14 +39,12 @@ func (diskStorage) storeBuild(buildID string, fileContent string) {
 	check(err)
 }
 
-func (diskStorage) storeScrapeResult(fileContent string) {
+func (diskStorage) storeScrapeResult(timeStamp time.Time, fileContent string) {
 
 	dir, err := os.Getwd()
 	check(err)
 
-	t := time.Now().UTC()
-
-	fileName := "azure-devops-builds-" + t.Format(time.RFC3339) + ".json"
+	fileName := "azure-devops-builds-" + timeStamp.Format(time.RFC3339) + ".json"
 
 	filePathAndName := dir + "/scrape-results/" + fileName
 	dataToWrite := []byte(fileContent)

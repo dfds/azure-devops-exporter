@@ -48,7 +48,7 @@ func main() {
 	}
 
 	fileContent := "[" + strings.Join(projectsBuildStrings[:], ",") + "]"
-	storage.storeScrapeResult(fileContent)
+	storage.storeScrapeResult(scrapeStartTime, fileContent)
 }
 
 type ProjectsResponse struct {
