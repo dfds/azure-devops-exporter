@@ -21,7 +21,7 @@ func main() {
 
 	buildStringsChannel := make(chan string)
 
-	startTime := storage.getLastScrapeStarTime()
+	lastScrapeStartTime := storage.getLastScrapeStartTime()
 
 	scrapeStartTime := time.Now().UTC()
 
@@ -33,7 +33,7 @@ func main() {
 			buildStringsChannel,
 			token,
 			projectID,
-			startTime,
+			lastScrapeStartTime,
 			scrapeStartTime)
 	}
 

@@ -17,13 +17,12 @@ type awsStorage struct{}
 var datalakeS3Bucket = "dfds-datalake"
 var folderPrefix = "azure-devops/"
 
-func (awsStorage) getLastScrapeStarTime() time.Time {
+func (awsStorage) getLastScrapeStartTime() time.Time {
 
 	awsSession := getAwsSession()
 	svc := s3.New(awsSession)
 
-	//resp, _ := svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(datalakeS3Bucket),Prefix: folderPrefix})
-	resp, _ := svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(datalakeS3Bucket)})
+	resp, _ := svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(datalakeS3Bucket), Prefix: &folderPrefix})
 
 	var scrapeTimes []string
 	for _, file := range resp.Contents {
