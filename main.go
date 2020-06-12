@@ -20,9 +20,6 @@ func main() {
 
 	storage := diskStorage{}
 
-	//existingBuildsIDs := storage.getExistingBuildIDs()
-	existingBuildsIDs := make([]string, 0)
-
 	buildStringsChannel := make(chan string)
 
 	startTime := storage.getLastScrapeStarTime()
@@ -38,7 +35,6 @@ func main() {
 			storage,
 			token,
 			projectID,
-			existingBuildsIDs,
 			startTime,
 			scrapeStartTime)
 	}
@@ -82,11 +78,9 @@ func processProject(
 	storage Storage,
 	adoPersonalAccessToken string,
 	projectID string,
-	existingBuildIDs []string,
 	startTime time.Time,
 	endTime time.Time) {
 
-	//buildsResponseAsString := getBuildsResponseAsString(adoPersonalAccessToken, projectID)
 	buildsResponseAsString := getBuildsResponseAsStringBetween(
 		adoPersonalAccessToken,
 		projectID,
@@ -94,8 +88,6 @@ func processProject(
 		endTime)
 
 	idToBuildMap := convertBuildsResponseToMap(buildsResponseAsString)
-
-	idToBuildMap = removeExistingBuilds(existingBuildIDs, idToBuildMap)
 
 	for buildID, javascriptObject := range idToBuildMap {
 		storage.storeBuild(buildID, javascriptObject)
@@ -108,15 +100,6 @@ func processProject(
 	}
 
 	buildStrings <- strings.Join(builds[:], ",")
-}
-
-func removeExistingBuilds(existingBuildIDs []string, idToBuild map[string]string) map[string]string {
-	for _, existingBuildID := range existingBuildIDs {
-		delete(idToBuild, existingBuildID)
-
-	}
-
-	return idToBuild
 }
 
 func convertBuildsResponseToMap(buildsResponseAsString string) map[string]string {

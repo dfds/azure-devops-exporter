@@ -29,25 +29,3 @@ func TestConvertBuildsResponseToMapHasValidStarAndEndingsOfObjects(t *testing.T)
 		}
 	}
 }
-func TestRemoveExistingBuildsDoesAsStated(t *testing.T) {
-
-	jsonFile, err := ioutil.ReadFile("test/TestRemoveExistingBuildsDoesAsStated.json")
-	if err != nil {
-		fmt.Print(err)
-	}
-
-	jsonString := string(jsonFile)
-
-	idToBuildMap := convertBuildsResponseToMap(jsonString)
-
-	existingBuildIDs := []string{"211146", "181970"}
-
-	resultBuilds := removeExistingBuilds(existingBuildIDs, idToBuildMap)
-
-	for _, existingBuildID := range existingBuildIDs {
-		if _, ok := resultBuilds[existingBuildID]; ok {
-			t.Error("Key: '" + existingBuildID + "' should not exist in resultBuilds")
-		}
-
-	}
-}
