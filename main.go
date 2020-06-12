@@ -59,9 +59,7 @@ type ProjectsResponse struct {
 }
 
 type Storage interface {
-	getExistingBuildIDs() []string
-	storeBuild(buildID string, fileContent string)
-	storeScrapeResult(fileContent string)
+	storeScrapeResult(timeStamp time.Time, fileContent string)
 	getLastScrapeStarTime() time.Time
 }
 
