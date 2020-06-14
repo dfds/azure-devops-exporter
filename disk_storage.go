@@ -45,7 +45,7 @@ func (diskStorage) getLastScrapeStartTime() time.Time {
 
 	last := scrapeTimes[len(scrapeTimes)-1]
 
-	lastScrapeTime, _ := time.Parse("2006-01-02T15:04:05Z", last)
-
+	lastScrapeTime, err := time.Parse("2006-01-02T15:04:05Z", last)
+	check(err)
 	return lastScrapeTime
 }
