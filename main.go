@@ -24,7 +24,8 @@ func main() {
 
 	scrapeStartTime := time.Now().UTC()
 
-	fmt.Println("Scraping finished builds until: " + scrapeStartTime.Format(time.RFC3339))
+	timeDifference := scrapeStartTime.Sub(lastScrapeStartTime)
+	fmt.Println("Scraping finished builds between: '" + lastScrapeStartTime.Format(time.RFC3339) + "' and '" + scrapeStartTime.Format(time.RFC3339) + "' a HH:MM:SS " + time.Time{}.Add(timeDifference).Format("15:04:05") + " difference")
 
 	// start a goroutine for each project
 	for _, projectID := range projectIDs {
@@ -40,7 +41,7 @@ func main() {
 	projectsBuildStrings := make([]string, 0)
 	for i := 1; i <= len(projectIDs); i++ {
 		projectBuildsString := <-buildStringsChannel
-		if projectBuildsString != "{\"count\":0,\"value\":[]}"  {
+		if projectBuildsString != "{\"count\":0,\"value\":[]}" {
 			projectBuildsString := removeWrapperObject(projectBuildsString)
 			projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
 		}
