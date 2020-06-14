@@ -52,7 +52,7 @@ func (diskStorage) storeScrapeResult(timeStamp time.Time, fileContent string) {
 	check(err)
 }
 
-func (diskStorage) getLastScrapeStarTime() time.Time {
+func (diskStorage) getLastScrapeStartTime() time.Time {
 
 	dir, err := os.Getwd()
 	check(err)
