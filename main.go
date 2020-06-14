@@ -14,8 +14,7 @@ func main() {
 	token := os.Getenv("ADO_PERSONAL_ACCESS_TOKEN")
 
 	projectIDs := getProjectIDs(token)
-
-	fmt.Print(projectIDs)
+	//projectIDs := []string{"136d92f4-a14a-422c-9f0e-230f6dbd90b1","785336a7-e841-46ba-b632-5092b88c7907"}
 
 	storage := diskStorage{}
 
@@ -41,7 +40,8 @@ func main() {
 	projectsBuildStrings := make([]string, 0)
 	for i := 1; i <= len(projectIDs); i++ {
 		projectBuildsString := <-buildStringsChannel
-		if projectBuildsString != "" {
+		if projectBuildsString != "{\"count\":0,\"value\":[]}"  {
+			projectBuildsString := removeWrapperObject(projectBuildsString)
 			projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
 		}
 		fmt.Print(strconv.Itoa(i) + " ")
@@ -81,11 +81,6 @@ func processProject(
 		projectID,
 		startTime,
 		endTime)
-
-	if buildsResponseAsString == "" || strings.HasPrefix(buildsResponseAsString, "{\"count\":0,") {
-		buildStrings <- ""
-	}
-	buildsResponseAsString = removeWrapperObject(buildsResponseAsString)
 
 	buildStrings <- buildsResponseAsString
 }
