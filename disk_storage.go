@@ -13,24 +13,24 @@ type diskStorage struct{}
 func (diskStorage) storeScrapeResult(timeStamp time.Time, fileContent string) {
 
 	dir, err := os.Getwd()
-	check(err)
+	panicOnError(err)
 
 	fileName := "azure-devops-builds-" + timeStamp.Format(time.RFC3339) + ".json"
 
 	filePathAndName := dir + "/scrape-results/" + fileName
 	dataToWrite := []byte(fileContent)
 	err = ioutil.WriteFile(filePathAndName, dataToWrite, 0644)
-	check(err)
+	panicOnError(err)
 }
 
 func (diskStorage) getLastScrapeStartTime() time.Time {
 
 	dir, err := os.Getwd()
-	check(err)
+	panicOnError(err)
 	root := dir + "/scrape-results/"
 
 	fileInfo, err := ioutil.ReadDir(root)
-	check(err)
+	panicOnError(err)
 
 	var scrapeTimes []string
 	for _, file := range fileInfo {
@@ -46,6 +46,6 @@ func (diskStorage) getLastScrapeStartTime() time.Time {
 	last := scrapeTimes[len(scrapeTimes)-1]
 
 	lastScrapeTime, err := time.Parse("2006-01-02T15:04:05Z", last)
-	check(err)
+	panicOnError(err)
 	return lastScrapeTime
 }

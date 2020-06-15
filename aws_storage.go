@@ -26,7 +26,7 @@ func handleAwsErrors(err error) {
 				panic("No AWS credentials found, see following link for more info on how to set AWS credentials:\n https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html")
 			}
 		} else {
-			check(err)
+			panicOnError(err)
 		}
 	}
 }

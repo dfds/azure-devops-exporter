@@ -87,7 +87,7 @@ type Storage interface {
 	getLastScrapeStarTime() time.Time
 }
 
-func check(e error) {
+func panicOnError(e error) {
 	if e != nil {
 		panic(e)
 	}
