@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -13,7 +12,6 @@ import (
 func main() {
 	token := os.Getenv("ADO_PERSONAL_ACCESS_TOKEN")
 
-	projectIDs := getProjectIDs(token)
 	//projectIDs := []string{"136d92f4-a14a-422c-9f0e-230f6dbd90b1","785336a7-e841-46ba-b632-5092b88c7907"}
 
 	storage := diskStorage{}
@@ -27,6 +25,8 @@ func main() {
 	timeDifference := scrapeStartTime.Sub(lastScrapeStartTime)
 	fmt.Println("Scraping finished builds between: '" + lastScrapeStartTime.Format(time.RFC3339) + "' and '" + scrapeStartTime.Format(time.RFC3339) + "' a HH:MM:SS " + time.Time{}.Add(timeDifference).Format("15:04:05") + " difference")
 
+	projectIDs := getProjectIDs(token)
+	fmt.Println(fmt.Sprintf("Found %d projects\n", len(projectIDs)))
 	// start a goroutine for each project
 	for _, projectID := range projectIDs {
 		go processProject(
@@ -37,6 +37,8 @@ func main() {
 			scrapeStartTime)
 	}
 
+	printProgressBar(len(projectIDs))
+
 	// Collect one projectBuildsStrings per project from the channel
 	projectsBuildStrings := make([]string, 0)
 	for i := 1; i <= len(projectIDs); i++ {
@@ -45,7 +47,7 @@ func main() {
 			projectBuildsString := removeWrapperObject(projectBuildsString)
 			projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
 		}
-		fmt.Print(strconv.Itoa(i) + " ")
+		fmt.Print("█")
 	}
 
 	if len(projectsBuildStrings) == 0 {
@@ -54,6 +56,21 @@ func main() {
 
 	fileContent := "[" + strings.Join(projectsBuildStrings[:], ",") + "]"
 	storage.storeScrapeResult(scrapeStartTime, fileContent)
+}
+
+func printProgressBar(length int) {
+	fmt.Println("Progress:")
+
+	progressBar := "┌"
+
+	for i := 3; i <= length; i++ {
+		progressBar = progressBar + "─"
+	}
+	progressBar = progressBar + "┐"
+	rune := []rune(progressBar)
+	rune[len(rune)/2] = '┬'
+	progressBar = string(rune)
+	fmt.Println(progressBar)
 }
 
 type ProjectsResponse struct {
