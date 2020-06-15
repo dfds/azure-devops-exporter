@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -17,12 +18,27 @@ type awsStorage struct{}
 var datalakeS3Bucket = "dfds-datalake"
 var folderPrefix = "azure-devops/"
 
+func handleAwsErrors(err error) {
+	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+
+			if strings.HasPrefix(awsErr.Message(), "no valid providers in chain.") {
+				panic("No AWS credentials found, see following link for more info on how to set AWS credentials:\n https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html")
+			}
+		} else {
+			check(err)
+		}
+	}
+}
+
 func (awsStorage) getLastScrapeStartTime() time.Time {
 
 	awsSession := getAwsSession()
 	svc := s3.New(awsSession)
 
-	resp, _ := svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(datalakeS3Bucket), Prefix: &folderPrefix})
+	resp, err := svc.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(datalakeS3Bucket), Prefix: &folderPrefix})
+
+	handleAwsErrors(err)
 
 	var scrapeTimes []string
 	for _, file := range resp.Contents {
@@ -88,11 +104,7 @@ func (awsStorage) storeScrapeResult(timeStamp time.Time, fileContent string) {
 		Body:   bytes.NewReader(dataToWrite),
 	})
 
-	//in case it fails to upload
-	if err != nil {
-		fmt.Printf("failed to upload file, %v", err)
-		return
-	}
+	handleAwsErrors(err)
 
 	fmt.Printf("file uploaded to, %s\n", result.Location)
 }
