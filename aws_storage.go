@@ -27,8 +27,16 @@ func (awsStorage) getLastScrapeStartTime() time.Time {
 	var scrapeTimes []string
 	for _, file := range resp.Contents {
 		fmt.Println("Name:         ", *file.Key)
-		scrapeTime := strings.TrimLeft(strings.TrimRight(*file.Key, ".json"), "azure-devops-builds-")
+
+		scrapeTime := strings.TrimLeft(*file.Key, folderPrefix)
+		scrapeTime = strings.TrimLeft(scrapeTime, "azure-devops-builds-")
+		scrapeTime = strings.TrimRight(scrapeTime, ".json")
+
+		if scrapeTime == "" {
+			continue
+		}
 		scrapeTimes = append(scrapeTimes, scrapeTime)
+
 	}
 
 	if len(scrapeTimes) == 0 {
