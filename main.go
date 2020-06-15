@@ -14,7 +14,7 @@ func main() {
 
 	//projectIDs := []string{"136d92f4-a14a-422c-9f0e-230f6dbd90b1","785336a7-e841-46ba-b632-5092b88c7907"}
 
-	storage := diskStorage{}
+	storage := awsStorage{}
 
 	buildStringsChannel := make(chan string)
 
