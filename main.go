@@ -48,6 +48,10 @@ func main() {
 		fmt.Print(strconv.Itoa(i) + " ")
 	}
 
+	if len(projectsBuildStrings) == 0 {
+		return
+	}
+
 	fileContent := "[" + strings.Join(projectsBuildStrings[:], ",") + "]"
 	storage.storeScrapeResult(scrapeStartTime, fileContent)
 }
