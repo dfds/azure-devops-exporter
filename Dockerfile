@@ -1,9 +1,12 @@
 # TODO: Make this example with our best pratices
 
-FROM golang:1.7.3 AS builder
+FROM golang:1.14.4-alpine3.12 AS builder
 WORKDIR /go/src/github.com/alexellis/href-counter/
-RUN go get -d -v golang.org/x/net/html  
-COPY app.go    .
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
+COPY main.go aws_storage.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
 FROM alpine:latest  
