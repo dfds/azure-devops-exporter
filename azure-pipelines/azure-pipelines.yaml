@@ -104,4 +104,5 @@ stages:
               kubernetesServiceEndpoint: '$(k8s-service-connection)'
               namespace: '$(kubernetes-namespace)'
               command: apply
-              arguments: '-k $(Pipeline.Workspace)/release/k8s-orchestration/overlays/for-production/'
+              cwd: '$(Pipeline.Workspace)/release/'
+              arguments: '-k ./k8s-orchestration/overlays/for-production/'
