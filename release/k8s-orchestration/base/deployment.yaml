@@ -1,6 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    iam.amazonaws.com/role: CloudWatchLogsCollector
   name: azure-devops-exporter
   namespace: logcollect
   labels:
@@ -31,3 +33,6 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "200m"
+        envFrom:
+        - secretRef:
+            name: ado-exporter-pat
