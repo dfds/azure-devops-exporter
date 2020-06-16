@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azure-devops-exporter
+  namespace: selfservice
+spec:
+  template:
+    spec:
+      containers:
+      - name: azure-devops-exporter
+        image: ded/kafka-janitor:latest
+        imagePullPolicy: IfNotPresent
