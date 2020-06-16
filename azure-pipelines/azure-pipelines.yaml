@@ -45,7 +45,7 @@ stages:
     - task: Bash@3
       inputs:
         targetType: 'filePath'
-        filePath: '$(System.DefaultWorkingDirectory)/push_container_image.sh'
+        filePath: '$(System.DefaultWorkingDirectory)/release/push_container_image.sh'
         arguments: $(Build.BuildId)
       displayName: 'Upload container image'
       env:
