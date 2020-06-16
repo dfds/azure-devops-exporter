@@ -1,8 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    iam.amazonaws.com/role: CloudWatchLogsCollector
   name: azure-devops-exporter
   namespace: logcollect
   labels:
@@ -11,6 +9,8 @@ metadata:
     app: azure-devops-exporter
     component: azure-devops-exporter
     version: 0.0.1
+  annotations:
+    iam.amazonaws.com/role: CloudWatchLogsCollector
 spec:
   replicas: 1
   selector:
