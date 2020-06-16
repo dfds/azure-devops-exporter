@@ -7,7 +7,7 @@ metadata:
     project: selfservice
     department: devex
     app: azure-devops-exporter
-    fat friend : azure-devops-exporter
+    component: azure-devops-exporter
     version: 0.0.1
 spec:
   replicas: 1
@@ -22,7 +22,8 @@ spec:
         department: devex
     spec:
       containers:
-      - name: azure-devops-exporter
+      - image: ded/kafka-janitor
+        name: azure-devops-exporter
         resources:
           requests:
             memory: "64Mi"

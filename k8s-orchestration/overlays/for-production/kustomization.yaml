@@ -1,0 +1,10 @@
+namespace: selfservice
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base
+
+images:
+- name: ded/kafka-janitor
+  newName: 579478677147.dkr.ecr.eu-central-1.amazonaws.com/ded/kafka-janitor
+  newTag: "3.6"
