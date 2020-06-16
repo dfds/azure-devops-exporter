@@ -84,6 +84,7 @@ stages:
             inputs:
               targetType: 'inline'
               script: curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+                      sudo mv kustomize /usr/local/bin
             displayName: 'Install Kustomize'
               
           - task: Bash@3
