@@ -9,8 +9,6 @@ metadata:
     app: azure-devops-exporter
     component: azure-devops-exporter
     version: 0.0.1
-  annotations:
-    iam.amazonaws.com/role: CloudWatchLogsCollector
 spec:
   replicas: 1
   selector:
@@ -22,6 +20,8 @@ spec:
         app: azure-devops-exporter
         project: logcollect
         department: devex
+      annotations:
+        iam.amazonaws.com/role: CloudWatchLogsCollector
     spec:
       containers:
       - image: azure-devops-exporter/image-placeholder
