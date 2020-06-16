@@ -1,3 +1,3 @@
 parentdir="$(dirname "$(pwd)")"
 
-docker build --tag azure-devops-exporter:latest -f ${parentdir}/Dockerfile ${parentdir}
+docker build --tag ded/azure-devops-exporter:latest -f ${parentdir}/Dockerfile ${parentdir}
