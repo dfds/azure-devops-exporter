@@ -15,59 +15,60 @@ pr: none
 
 # Global variables for the pipeline
 variables:
-  agent-pool: 'Docker-pool'
-  k8s-service-connection: 'Kubernetes-Service-Connection-Name'
-  kubernetes-namespace: 'capability-xxxx'
-
-# Ressources to import: Containers, Service Connections ect.
-resources:
-   containers:
-     - container: displayname_of_container
-       image: repo/container-name:tag
-       # Mount Pipeline secrets as environment variables in container
-       env:
-        PIPELINE_SECRET_VARIABLE1: $(PIPELINE_SECRET_VARIABLE1)
-        PIPELINE_SECRET_VARIABLE2: $(PIPELINE_SECRET_VARIABLE2)
-
+- group: 'AWS ECR-PUSH PROD'
+- name: 'vmImage'
+  value: 'ubuntu-latest'
+- name: 'k8s-service-connection'
+  value: 'Kubernetes-Hellman'
+- name: 'kubernetes-namespace'
+  value: 'logcollect'
 
 stages:
 # Continuous Integration steps
 - stage: CI
   displayName: 'Continuous Integration'
-  # Validation jobs
+  pool:
+    vmImage: "$(vmImage)"
+
   jobs:
-  - job: Validate
-    pool: '$(agent-pool)'
-   
-   # Validate pipeline / group variables
-    steps:   
-    - bash:
-        echo 'Checking for required variables...'
-        bash -c '[[ -z $VARIABLE1 || -z $VARIABLE2 ]] && exit 1 || true'
-      displayName: Testing environment variables
-
-  # Build jobs
   - job: Build
-    pool: '$(agent-pool)'
-
     steps:
+
+    - task: Bash@3
+      inputs:
+        targetType: 'filePath'
+        filePath: '$(System.DefaultWorkingDirectory)/build_container_image.sh'
+        arguments: $(Build.BuildId)
+        workingDirectory: '$(System.DefaultWorkingDirectory)/release/'
+      displayName: 'Build container image'
+  
+    - task: Bash@3
+      inputs:
+        targetType: 'filePath'
+        filePath: '$(System.DefaultWorkingDirectory)/push_container_image.sh'
+        arguments: $(Build.BuildId)
+      displayName: 'Upload container image'
+      env:
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
     # Upload Kubernetes manifests to current artifact Pipeline from folder /k8s
-    - publish: $(System.DefaultWorkingDirectory)/k8s
-      artifact: manifests
-      displayName: 'Publish Artifact: manifests'
+    - publish: $(System.DefaultWorkingDirectory)/release
+      artifact: release
+      displayName: 'Publish Artifact: release'
 
 # Continuous Deployment steps
 - stage: CD
   displayName: 'Continuous Deployment'
   dependsOn: CI
+  pool:
+    vmImage: "$(vmImage)"
   # Run CD only if CI succeeds and if pipeline runs from Master branch
   condition: and(succeeded('CI'), eq(variables['Build.SourceBranch'], 'refs/heads/master')) 
 
   jobs:
   - deployment: K8s
     displayName: 'Deploy to Kubernetes'
-    pool: '$(agent-pool)'
-    container: displayname_of_container
     environment: 'Hellman'
 
     strategy: 
@@ -76,22 +77,22 @@ stages:
           steps:
           # Download manifest from current artifacts pipeline
           - download: current
-            artifact: manifests
-            displayName: 'Download Artifact: manifests'
-          
-          # Replace token values in yaml files with pipeline variables
-          - task: qetza.replacetokens.replacetokens-task.replacetokens@3
-            displayName: 'Replace tokens in yaml files'
+            artifact: release
+            displayName: 'Download Artifact: release'
+
+          - task: Bash@3
             inputs:
-              rootDirectory: '$(Pipeline.Workspace)/manifests/'
-              targetFiles: '*.yml'
-              tokenPrefix: '$('
-              tokenSuffix: ')'
-          
-          # Upload the modified Kubernetes manifests to current Pipeline for easy debugging
-          - publish: $(Pipeline.Workspace)/manifests/
-            artifact: deployed-manifests
-            displayName: 'Publish Artifact: manifests'
+              targetType: 'inline'
+              script: curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+            displayName: 'Install Kustomize'
+              
+          - task: Bash@3
+            inputs:
+              targetType: 'filePath'
+              filePath: '$(Pipeline.Workspace)/release/kustomize-replace-image-prod.sh'
+              arguments: $(Build.BuildId)
+              workingDirectory: $(Pipeline.Workspace)/release/
+            displayName: 'Set image tag in kustomize for production'
 
           # Apply Kubernetes manifests
           - task: Kubernetes@1
@@ -101,4 +102,4 @@ stages:
               kubernetesServiceEndpoint: '$(k8s-service-connection)'
               namespace: '$(kubernetes-namespace)'
               command: apply
-              arguments: '-f $(Pipeline.Workspace)/manifests/'
+              arguments: '-k $(Pipeline.Workspace)/release/k8s-orchestration/overlays/for-production/'
