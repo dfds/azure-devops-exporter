@@ -22,7 +22,7 @@ spec:
         department: devex
     spec:
       containers:
-      - image: ded/kafka-janitor
+      - image: azure-devops-exporter/image-placeholder
         name: azure-devops-exporter
         resources:
           requests:
