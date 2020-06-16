@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: azure-devops-exporter
-  namespace: selfservice
+  namespace: logcollect
   labels:
-    project: selfservice
+    project: logcollect
     department: devex
     app: azure-devops-exporter
     component: azure-devops-exporter
@@ -18,7 +18,7 @@ spec:
     metadata:
       labels:
         app: azure-devops-exporter
-        project: selfservice
+        project: logcollect
         department: devex
     spec:
       containers:

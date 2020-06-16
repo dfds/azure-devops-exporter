@@ -2,7 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: azure-devops-exporter
-  namespace: selfservice
+  namespace: logcollect
+
 spec:
   template:
     spec:

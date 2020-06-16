@@ -1,5 +1,6 @@
 bases:
 - ../../base
-namespace: selfservice
+namespace: logcollect
+
 patchesStrategicMerge:
 - deployment-patch.yaml

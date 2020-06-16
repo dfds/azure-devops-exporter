@@ -4,7 +4,8 @@ kind: Kustomization
 commonLabels:
   app: azure-devops-exporter
 
-namespace: selfservice
+namespace: logcollect
+
 
 resources:
 - deployment.yaml
