@@ -37,7 +37,7 @@ stages:
     - task: Bash@3
       inputs:
         targetType: 'filePath'
-        filePath: '$(System.DefaultWorkingDirectory)/build_container_image.sh'
+        filePath: '$(System.DefaultWorkingDirectory)/release/build_container_image.sh'
         arguments: $(Build.BuildId)
         workingDirectory: '$(System.DefaultWorkingDirectory)/release/'
       displayName: 'Build container image'
