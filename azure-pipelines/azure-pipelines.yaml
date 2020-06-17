@@ -91,7 +91,7 @@ stages:
           - task: Bash@3
             inputs:
               targetType: 'filePath'
-              filePath: '$(Pipeline.Workspace)/release/kustomize-replace-image-prod.sh'
+              filePath: '$(Pipeline.Workspace)/release/kustomize-replace-image-version-prod.sh'
               arguments: $(Build.BuildId)
               workingDirectory: $(Pipeline.Workspace)/release/
             displayName: 'Set image tag in kustomize for production'
