@@ -143,7 +143,10 @@ func getBuildsResponseAsStringBetween(
 		Get(url)
 
 	if len(resp.String()) == 0 {
-		fmt.Println("projectID: '" + projectID + "' is empty")
+		fmt.Println("projectID: '" + projectID + "' is empty, headers says: ")
+		for i, s := range resp.Header() {
+			fmt.Println("header: "+i, s)
+		}
 	}
 	return resp.String()
 }
