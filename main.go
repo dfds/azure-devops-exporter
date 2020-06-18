@@ -139,8 +139,10 @@ func getBuildsResponseAsStringBetween(
 	formattedEndTime := endTime.Format(time.RFC3339)
 
 	url := "https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5000&statusFilter=completed&minTime=" + formattedStartTime + "&maxTime=" + formattedEndTime
-	resp, _ := client.R().
+	resp, err := client.R().
 		Get(url)
+
+	panicOnError(err)
 
 	if len(resp.String()) == 0 {
 		fmt.Println("projectID: '" + projectID + "' is empty, headers says: ")
