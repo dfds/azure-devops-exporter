@@ -17,8 +17,8 @@ func main() {
 	}
 	//projectIDs := []string{"136d92f4-a14a-422c-9f0e-230f6dbd90b1","785336a7-e841-46ba-b632-5092b88c7907"}
 
-	storage := awsStorage{}
-	//storage := diskStorage{}
+	//storage := awsStorage{}
+	storage := diskStorage{}
 
 	buildStringsChannel := make(chan string)
 
@@ -49,9 +49,7 @@ func main() {
 	projectsBuildStrings := make([]string, 0)
 	for i := 1; i <= len(projectIDs); i++ {
 		projectBuildsString := <-buildStringsChannel
-		if len(projectBuildsString) == 0 {
-			panic("No build string should be empty (0)")
-		}
+
 		if projectBuildsString != "{\"count\":0,\"value\":[]}" {
 			projectBuildsString := removeWrapperObject(projectBuildsString)
 			projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
@@ -144,6 +142,9 @@ func getBuildsResponseAsStringBetween(
 	resp, _ := client.R().
 		Get(url)
 
+	if len(resp.String()) == 0 {
+		fmt.Println("projectID: '" + projectID + "' is empty")
+	}
 	return resp.String()
 }
 
