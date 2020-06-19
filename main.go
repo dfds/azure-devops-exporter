@@ -100,7 +100,7 @@ func channelRemoveEmptyResults(projectBuildsStrings <-chan string) <-chan string
 
 type Storage interface {
 	storeScrapeResult(timeStamp time.Time, fileContent string)
-	getLastScrapeStarTime() time.Time
+	getLastScrapeStartTime() time.Time
 }
 
 func panicOnError(e error) {
