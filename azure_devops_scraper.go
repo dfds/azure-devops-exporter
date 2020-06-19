@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/go-resty/resty/v2"
 	"time"
 )
@@ -22,15 +23,18 @@ func channelBuildsResponseAsStringBetween(
 
 	go func() {
 		for projectID := range projectIDs {
-
+			fmt.Print("x")
 			url := "https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5000&statusFilter=completed&minTime=" + formattedStartTime + "&maxTime=" + formattedEndTime
-			resp, err := client.R().
-				Get(url)
-
-			panicOnError(err)
-			out <- resp.String()
+			//resp, err := client.R().
+			//	Get(url)
+			//
+			//panicOnError(err)
+			//out <- resp.String()
+			out <- url
 		}
 		close(out)
+
+		fmt.Print("c")
 	}()
 	return out
 }
@@ -48,16 +52,12 @@ func channelProjectIDs(adoPersonalAccessToken string) (<-chan string, int) {
 	projectsResponse := ProjectsResponse{}
 	json.Unmarshal(resp.Body(), &projectsResponse)
 
-	out := make(chan string)
+	out := make(chan string, len(projectsResponse.Value))
 
-	go func() {
-		for i := 0; i < len(projectsResponse.Value); i++ {
-			project := projectsResponse.Value[i]
-
-			out <- project.ID
-		}
-		close(out)
-	}()
+	for _, projectResponse := range projectsResponse.Value {
+		out <- projectResponse.ID
+	}
+	close(out)
 
 	return out, len(projectsResponse.Value)
 }
