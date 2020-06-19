@@ -40,8 +40,10 @@ func channelProjectIDs(adoPersonalAccessToken string) (<-chan string, int) {
 	client := resty.New()
 	// Bearer Auth Token for all request
 	client.SetBasicAuth("", adoPersonalAccessToken)
-	resp, _ := client.R().
+	resp, err := client.R().
 		Get("https://dev.azure.com/dfds/_apis/projects?api-version=5.1")
+
+	panicOnError(err)
 
 	projectsResponse := ProjectsResponse{}
 	json.Unmarshal(resp.Body(), &projectsResponse)
