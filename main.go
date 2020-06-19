@@ -14,8 +14,8 @@ func main() {
 	}
 	//projectIDs := []string{"136d92f4-a14a-422c-9f0e-230f6dbd90b1","785336a7-e841-46ba-b632-5092b88c7907"}
 
-	//storage := awsStorage{}
-	storage := diskStorage{}
+	storage := awsStorage{}
+	//storage := diskStorage{}
 
 	lastScrapeStartTime := storage.getLastScrapeStartTime()
 	//lastScrapeStartTime, _ := time.Parse("2006-01-02T15:04:05Z", "2020-06-18T06:45:19Z")
