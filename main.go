@@ -38,17 +38,21 @@ func main() {
 		lastScrapeStartTime,
 		scrapeStartTime)
 
+	buildsResponseWithoutEmptyChannel := channelRemoveEmptyResults(buildsResponseAsStringsChannel)
+
 	printProgressBar(projectIDsCount)
 
 	// Collect one projectBuildsStrings per project from the channel
 	projectsBuildStrings := make([]string, 0)
 	for i := 1; i <= projectIDsCount; i++ {
-		projectBuildsString := <-buildsResponseAsStringsChannel
+		projectBuildsString := <-buildsResponseWithoutEmptyChannel
 
-		if projectBuildsString != "{\"count\":0,\"value\":[]}" {
-			projectBuildsString := removeWrapperObject(projectBuildsString)
-			projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
+		if projectBuildsString == "{\"count\":0,\"value\":[]}" {
+			panic("this should not be there")
 		}
+		projectBuildsString = removeWrapperObject(projectBuildsString)
+		projectsBuildStrings = append(projectsBuildStrings, projectBuildsString)
+
 		fmt.Print("█")
 	}
 	fmt.Println()
@@ -75,6 +79,23 @@ func printProgressBar(length int) {
 	rune[len(rune)/2] = '┬'
 	progressBar = string(rune)
 	fmt.Println(progressBar)
+}
+
+func channelRemoveEmptyResults(projectBuildsStrings <-chan string) <-chan string {
+
+	out := make(chan string)
+
+	go func() {
+		for projectBuildsString := range projectBuildsStrings {
+			if projectBuildsString == "{\"count\":0,\"value\":[]}" {
+				continue
+			}
+			out <- projectBuildsString
+		}
+		close(out)
+	}()
+	return out
+
 }
 
 type Storage interface {
