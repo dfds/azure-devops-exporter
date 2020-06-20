@@ -63,12 +63,12 @@ func channelProjectIDs(adoPersonalAccessToken string) (<-chan string, int) {
 	json.Unmarshal(resp.Body(), &projectsResponse)
 
 	out := make(chan string, len(projectsResponse.Value))
-
-	for _, projectResponse := range projectsResponse.Value {
-		out <- projectResponse.ID
-	}
-	close(out)
-
+	go func() {
+		for _, projectResponse := range projectsResponse.Value {
+			out <- projectResponse.ID
+		}
+		close(out)
+	}()
 	return out, len(projectsResponse.Value)
 }
 
