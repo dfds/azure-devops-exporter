@@ -14,8 +14,8 @@ func main() {
 	}
 	//projectIDs := []string{"136d92f4-a14a-422c-9f0e-230f6dbd90b1","785336a7-e841-46ba-b632-5092b88c7907"}
 
-	//storage := awsStorage{}
-	storage := diskStorage{}
+	storage := awsStorage{}
+	//storage := diskStorage{}
 
 	lastScrapeStartTime := storage.getLastScrapeStartTime()
 	//lastScrapeStartTime, _ := time.Parse("2006-01-02T15:04:05Z", "2020-06-18T06:45:19Z")
@@ -26,38 +26,31 @@ func main() {
 	timeDifference := scrapeStartTime.Sub(lastScrapeStartTime)
 	fmt.Println("Scraping finished builds between: '" + lastScrapeStartTime.Format(time.RFC3339) + "' and '" + scrapeStartTime.Format(time.RFC3339) + "' a HH:MM:SS " + time.Time{}.Add(timeDifference).Format("15:04:05") + " difference")
 
-	// start a goroutine for each project
-
 	projectIDsChannel, projectIDsCount := channelProjectIDs(token)
-	<-projectIDsChannel
+
 	fmt.Println(fmt.Sprintf("Will process %d projects\n", projectIDsCount))
 	printProgressBar(projectIDsCount)
+
 	buildsResponseAsStringsChannel := channelBuildsResponseAsStringBetween(
 		token,
 		projectIDsChannel,
 		lastScrapeStartTime,
 		scrapeStartTime)
-
 	buildsResponseWithoutEmptyChannel := channelRemoveEmptyResults(buildsResponseAsStringsChannel)
 	buildsWithNoWrappersChannel := channelRemoveWrapperObject(buildsResponseWithoutEmptyChannel)
 
-	giveMeAName := channelWriteScrapeResultToStorage(storage, scrapeStartTime, buildsWithNoWrappersChannel)
+	completedProjectsBuilds := channelWriteScrapeResultToStorage(storage, scrapeStartTime, buildsWithNoWrappersChannel)
 
-	for _, s := range <-giveMeAName {
-		if s == -1 {
-			fmt.Print(s)
+	// Keep main thread running while we wait for the processing of the channels
+	for {
+		builds := <-completedProjectsBuilds
+
+		// a closed channel will send the default value (empty string)
+		if builds == "" {
+			break
 		}
 	}
 
-	// Collect one projectBuildsStrings per project from the channel
-	//projectsBuildStrings := make([]string, 0)
-
-	<-buildsResponseAsStringsChannel
-	<-buildsResponseWithoutEmptyChannel
-	<-buildsWithNoWrappersChannel
-	<-giveMeAName
-
-	time.Sleep(10000 * time.Millisecond)
 }
 
 func printProgressBar(length int) {
@@ -76,12 +69,11 @@ func printProgressBar(length int) {
 
 func channelRemoveEmptyResults(projectBuildsStrings <-chan string) <-chan string {
 
-	out := make(chan string)
+	out := make(chan string, 1)
 
 	go func() {
 		forwardedBuildStings := 0
 		for projectBuildsString := range projectBuildsStrings {
-			//fmt.Print("y")
 			if projectBuildsString == "{\"count\":0,\"value\":[]}" {
 				continue
 			}
@@ -90,9 +82,6 @@ func channelRemoveEmptyResults(projectBuildsStrings <-chan string) <-chan string
 			forwardedBuildStings++
 		}
 		close(out)
-
-		//fmt.Sprintf("%d build strings have been forwarded\n", forwardedBuildStings)
-		//fmt.Println("")
 	}()
 	return out
 
@@ -100,7 +89,7 @@ func channelRemoveEmptyResults(projectBuildsStrings <-chan string) <-chan string
 
 func channelRemoveWrapperObject(projectBuildsStrings <-chan string) <-chan string {
 
-	out := make(chan string)
+	out := make(chan string, 1)
 
 	go func() {
 		for projectBuildsString := range projectBuildsStrings {
@@ -118,21 +107,19 @@ func channelWriteScrapeResultToStorage(
 	scrapeStartTime time.Time,
 	projectBuildsStrings <-chan string) <-chan string {
 
-	out := make(chan string)
+	out := make(chan string, 1)
 
 	go func() {
 		fileContent := "["
 		for projectBuildsString := range projectBuildsStrings {
 			fileContent += projectBuildsString
 			out <- projectBuildsString
-
-			//	fmt.Print("█")
 		}
-		close(out)
 
 		fileContent += "]"
 
 		if len(fileContent) == 2 {
+			close(out)
 			return
 		}
 
