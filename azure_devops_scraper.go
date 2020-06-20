@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
+	"sync"
 	"time"
 )
 
@@ -19,23 +20,32 @@ func channelBuildsResponseAsStringBetween(
 	formattedStartTime := startTime.Format(time.RFC3339)
 	formattedEndTime := endTime.Format(time.RFC3339)
 
-	out := make(chan string)
+	parallelRoutines := 2
+	out := make(chan string, parallelRoutines)
+	var wg sync.WaitGroup
+	wg.Add(parallelRoutines)
+
+	for e := 0; e < parallelRoutines; e++ {
+		go func() {
+			for projectID := range projectIDs {
+				url := "https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5000&statusFilter=completed&minTime=" + formattedStartTime + "&maxTime=" + formattedEndTime
+				resp, err := client.R().
+					Get(url)
+
+				panicOnError(err)
+				out <- resp.String()
+				fmt.Print("█")
+			}
+			wg.Done()
+
+		}()
+	}
 
 	go func() {
-		for projectID := range projectIDs {
-			fmt.Print("x")
-			url := "https://dev.azure.com/dfds/" + projectID + "/_apis/build/builds?api-version=5.1&$top=5000&statusFilter=completed&minTime=" + formattedStartTime + "&maxTime=" + formattedEndTime
-			//resp, err := client.R().
-			//	Get(url)
-			//
-			//panicOnError(err)
-			//out <- resp.String()
-			out <- url
-		}
+		wg.Wait()
 		close(out)
-
-		fmt.Print("c")
 	}()
+
 	return out
 }
 
