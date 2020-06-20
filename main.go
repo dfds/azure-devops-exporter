@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jeremywohl/flatten"
 	"os"
 	"strings"
 	"time"
@@ -38,8 +39,8 @@ func main() {
 		scrapeStartTime)
 	buildsResponseWithoutEmptyChannel := channelRemoveEmptyResults(buildsResponseAsStringsChannel)
 	buildsWithNoWrappersChannel := channelRemoveWrapperObject(buildsResponseWithoutEmptyChannel)
-
-	completedProjectsBuilds := channelWriteScrapeResultToStorage(storage, scrapeStartTime, buildsWithNoWrappersChannel)
+	flattenedBuildsChannel := flattenObjects(buildsWithNoWrappersChannel)
+	completedProjectsBuilds := channelWriteScrapeResultToStorage(storage, scrapeStartTime, flattenedBuildsChannel)
 
 	// Keep main thread running while we wait for the processing of the channels
 	for {
@@ -98,6 +99,24 @@ func channelRemoveWrapperObject(projectBuildsStrings <-chan string) <-chan strin
 		}
 		close(out)
 	}()
+	return out
+
+}
+
+func flattenObjects(projectBuildsStrings <-chan string) <-chan string {
+
+	out := make(chan string, 10)
+
+	go func() {
+		for projectBuildsString := range projectBuildsStrings {
+			flattenedProjectBuildsString, err := flatten.FlattenString(projectBuildsString, "", flatten.DotStyle)
+
+			panicOnError(err)
+			out <- flattenedProjectBuildsString
+		}
+		close(out)
+	}()
+
 	return out
 
 }
