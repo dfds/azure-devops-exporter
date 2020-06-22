@@ -143,7 +143,7 @@ func channelWriteScrapeResultToStorage(
 		}
 
 		storage.storeScrapeResult(scrapeStartTime, fileContent)
-
+		close(out)
 	}()
 	return out
 
