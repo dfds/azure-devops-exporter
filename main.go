@@ -114,22 +114,23 @@ func flattenObjects(projectBuildsStrings <-chan string) <-chan string {
 				flattenedProjectBuildsString, err := flatten.FlattenString(projectBuildsString, "", flatten.DotStyle)
 				panicOnError(err)
 				out <- flattenedProjectBuildsString
-				return
+
+			} else {
+				singleObjectStrings[0] = strings.TrimLeft(singleObjectStrings[0], "{")
+				lastIndex := len(singleObjectStrings) - 1
+				singleObjectStrings[lastIndex] = strings.TrimRight(singleObjectStrings[0], "}")
+
+				for i := 0; i < len(singleObjectStrings); i++ {
+					singleObjectStrings[i] = "{" + singleObjectStrings[i] + "}"
+					flattenedProjectBuildsString, err := flatten.FlattenString(singleObjectStrings[i], "", flatten.DotStyle)
+					panicOnError(err)
+					singleObjectStrings[i] = flattenedProjectBuildsString
+				}
+
+				allFlattenedProjectBuildsString := strings.Join(singleObjectStrings, ",")
+				out <- allFlattenedProjectBuildsString
+
 			}
-
-			singleObjectStrings[0] = strings.TrimLeft(singleObjectStrings[0], "{")
-			lastIndex := len(singleObjectStrings) - 1
-			singleObjectStrings[lastIndex] = strings.TrimRight(singleObjectStrings[0], "}")
-
-			for i := 0; i < len(singleObjectStrings); i++ {
-				singleObjectStrings[i] = "{" + singleObjectStrings[i] + "}"
-				flattenedProjectBuildsString, err := flatten.FlattenString(singleObjectStrings[i], "", flatten.DotStyle)
-				panicOnError(err)
-				singleObjectStrings[i] = flattenedProjectBuildsString
-			}
-
-			allFlattenedProjectBuildsString := strings.Join(singleObjectStrings, ",")
-			out <- allFlattenedProjectBuildsString
 		}
 		close(out)
 	}()
