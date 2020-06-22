@@ -73,19 +73,15 @@ func channelRemoveEmptyResults(projectBuildsStrings <-chan string) <-chan string
 	out := make(chan string, 1)
 
 	go func() {
-		forwardedBuildStings := 0
 		for projectBuildsString := range projectBuildsStrings {
 			if projectBuildsString == "{\"count\":0,\"value\":[]}" {
 				continue
 			}
 			out <- projectBuildsString
-
-			forwardedBuildStings++
 		}
 		close(out)
 	}()
 	return out
-
 }
 
 func channelRemoveWrapperObject(projectBuildsStrings <-chan string) <-chan string {
