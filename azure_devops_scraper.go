@@ -43,6 +43,7 @@ func channelBuildsResponseAsStringBetween(
 
 	go func() {
 		wg.Wait()
+		fmt.Println()
 		close(out)
 	}()
 
