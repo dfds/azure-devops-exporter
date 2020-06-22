@@ -152,13 +152,12 @@ func channelWriteScrapeResultToStorage(
 	out := make(chan string, 1)
 
 	go func() {
-		fileContent := "["
+		fileContent := ""
 		for projectBuildsString := range projectBuildsStrings {
-			fileContent += projectBuildsString + ","
+			fileContent += projectBuildsString + "\n"
 			out <- projectBuildsString
 		}
-		fileContent = strings.TrimRight(fileContent, ",")
-		fileContent += "]"
+		fileContent = strings.TrimRight(fileContent, "\n")
 
 		if len(fileContent) == 2 {
 			close(out)
