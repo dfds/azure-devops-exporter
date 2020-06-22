@@ -107,8 +107,8 @@ func flattenObjects(projectBuildsStrings <-chan string) <-chan string {
 
 	go func() {
 		for projectBuildsString := range projectBuildsStrings {
-
-			singleObjectStrings := strings.Split(projectBuildsString, "},{")
+			splintObjectsByKey := "{\"_links\"" // some objects contains a validation array that get caught by a default }'{ split of the string
+			singleObjectStrings := strings.Split(projectBuildsString, "},"+splintObjectsByKey)
 
 			if len(singleObjectStrings) < 2 {
 				flattenedProjectBuildsString, err := flatten.FlattenString(projectBuildsString, "", flatten.DotStyle)
@@ -116,13 +116,18 @@ func flattenObjects(projectBuildsStrings <-chan string) <-chan string {
 				out <- flattenedProjectBuildsString
 
 			} else {
-				singleObjectStrings[0] = strings.TrimLeft(singleObjectStrings[0], "{")
+				singleObjectStrings[0] = strings.TrimLeft(singleObjectStrings[0], splintObjectsByKey)
 				lastIndex := len(singleObjectStrings) - 1
-				singleObjectStrings[lastIndex] = strings.TrimRight(singleObjectStrings[0], "}")
+
+				length := len(singleObjectStrings[lastIndex])
+				lastCharacter := singleObjectStrings[lastIndex][length-1 : length]
+				if lastCharacter == "}" {
+					singleObjectStrings[lastIndex] = singleObjectStrings[lastIndex][0 : length-1]
+				}
 
 				for i := 0; i < len(singleObjectStrings); i++ {
-					singleObjectStrings[i] = "{" + singleObjectStrings[i] + "}"
-					flattenedProjectBuildsString, err := flatten.FlattenString(singleObjectStrings[i], "", flatten.DotStyle)
+					currentSingleObjectStrings := splintObjectsByKey + singleObjectStrings[i] + "}"
+					flattenedProjectBuildsString, err := flatten.FlattenString(currentSingleObjectStrings, "", flatten.DotStyle)
 					panicOnError(err)
 					singleObjectStrings[i] = flattenedProjectBuildsString
 				}
