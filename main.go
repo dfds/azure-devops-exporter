@@ -107,7 +107,7 @@ func flattenObjects(projectBuildsStrings <-chan string) <-chan string {
 
 	go func() {
 		for projectBuildsString := range projectBuildsStrings {
-			splintObjectsByKey := "{\"_links\"" // some objects contains a validation array that get caught by a default }'{ split of the string
+			splintObjectsByKey := "{\"_" // some objects contains a validation array that get caught by a default }'{ split of the string
 			singleObjectStrings := strings.Split(projectBuildsString, "},"+splintObjectsByKey)
 
 			if len(singleObjectStrings) < 2 {
@@ -132,7 +132,7 @@ func flattenObjects(projectBuildsStrings <-chan string) <-chan string {
 					singleObjectStrings[i] = flattenedProjectBuildsString
 				}
 
-				allFlattenedProjectBuildsString := strings.Join(singleObjectStrings, ",")
+				allFlattenedProjectBuildsString := strings.Join(singleObjectStrings, "\n")
 				out <- allFlattenedProjectBuildsString
 
 			}
