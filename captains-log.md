@@ -1,3 +1,28 @@
+
+
+## 2020-06-23
+
+The Velocity project has gates in their builds resulting in builds takeing up to 14 days. Resulting in skewed picture of running time. We thing that we would need ot look at job running time to get precise running time.
+
+Picking random builds in the FastFwd project shows that our calculated que time is longer than the ui for the agent pool shows queue.
+https://dev.azure.com/dfds/_settings/agentpools?poolId=169&view=jobs
+
+We see a deviance in the ui but we feel the numbers are valid and expect that the numbers we see in the ui comes from a different datasource and have been rounded slightly
+
+Is there a init phase that would account for the missing wait time?
+
+I the agent doesn't count the init time, then our number from init to build it more on para.
+
+Current goal:
+- Queries within given timelines
+    Can we create a view or stored procedure? 
+- Do we still put empty files into s3?
+- How to demo?
+    This is what we are trying to solve
+    This is what we can do
+    Where would you like to see this go
+
+
 ## 2020-06-11
 
 We need to test if we get all the relevant results when we query:
