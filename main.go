@@ -159,7 +159,7 @@ func channelWriteScrapeResultToStorage(
 		}
 		fileContent = strings.TrimRight(fileContent, "\n")
 
-		if len(fileContent) == 2 {
+		if len(fileContent) == 0 {
 			close(out)
 			return
 		}
